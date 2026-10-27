@@ -10,6 +10,8 @@ import com.campusoverflow.identity.api.UserSummary;
 import com.campusoverflow.shared.page.PageResult;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +31,31 @@ public class DiscoveryQueryService {
     }
 
     public PageResult<SearchResultView> search(SearchQuery query) {
-        // TODO(S3)：实现 DiscoveryQueryService.search——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：DiscoveryQueryService.search 尚未实现");
+        PageResult<SearchHit> hits = search.search(query);
+        Set<Long> authorIds = hits.items().stream().map(SearchHit::authorId).collect(Collectors.toSet());
+        Map<Long, UserSummary> users = identity.findUsers(authorIds);
+        List<SearchResultView> views = hits.items().stream()
+                .map(h -> new SearchResultView(h.questionId(), h.title(), h.snippet(), h.tags(), h.courseId(),
+                        toAuthor(h.authorId(), users.get(h.authorId())), h.score(), h.answerCount(), h.accepted(),
+                        h.bountyOpen(), h.createdAt()))
+                .toList();
+        return new PageResult<>(views, hits.total(), hits.page(), hits.size());
     }
 
     public List<RelatedQuestionView> related(long questionId, int limit) {
-        // TODO(S3)：实现 DiscoveryQueryService.related——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：DiscoveryQueryService.related 尚未实现");
+        List<String> tags = index.findTags(questionId);
+        if (tags.isEmpty()) {
+            return List.of();
+        }
+        List<SearchIndex.RelatedCandidate> candidates = index.findCandidatesSharingTags(questionId, tags, limit * 2);
+        return RelatedQuestionPolicy.rank(candidates, tags.size(), limit).stream()
+                .map(c -> new RelatedQuestionView(c.questionId(), c.title(), c.answerCount(), c.accepted(),
+                        RelatedQuestionPolicy.jaccard(c.sharedTags(), tags.size(), c.tagCount())))
+                .toList();
+    }
+
+    private static SearchResultView.Author toAuthor(long id, UserSummary u) {
+        return new SearchResultView.Author(id, u == null ? "未知" : u.displayName(),
+                u == null ? null : u.role().name(), u != null && u.verified());
     }
 }
