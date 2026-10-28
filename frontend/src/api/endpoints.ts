@@ -46,6 +46,15 @@ export const api = {
 
   deleteQuestion: (id: number) => request<void>({ method: 'DELETE', url: `/v1/questions/${id}` }),
 
+  updateQuestion: (id: number, body: { courseId?: number; title: string; body: string; tags: string[] }) =>
+    request<void>({ method: 'PUT', url: `/v1/questions/${id}`, data: body }),
+
+  updateAnswer: (answerId: number, body: string) =>
+    request<void>({ method: 'PUT', url: `/v1/answers/${answerId}`, data: { body } }),
+
+  deleteAnswer: (answerId: number) =>
+    request<void>({ method: 'DELETE', url: `/v1/answers/${answerId}` }),
+
   answer: (questionId: number, body: string) =>
     request<{ id: number }>({ method: 'POST', url: `/v1/questions/${questionId}/answers`, data: { body } }),
 
