@@ -90,6 +90,19 @@ export interface SearchResult extends QuestionSummary {
   bountyOpen: boolean;
 }
 
+export interface BountyView {
+  id: number;
+  questionId: number;
+  sponsorId: number;
+  sponsorName: string;
+  points: number;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  winnerId: number | null;
+  answerId: number | null;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   userId: number;

@@ -15,9 +15,20 @@ import {
 } from 'antd';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/features/auth/useAuth';
-import { useQuestion, useQuestionMutations, useRelatedQuestions } from '@/features/questions/detailHooks';
+import {
+  useQuestion,
+  useQuestionBounty,
+  useQuestionMutations,
+  useRelatedQuestions,
+} from '@/features/questions/detailHooks';
 import { formatDate } from '@/shared/format';
 import type { Comment } from '@/shared/types';
+
+const BOUNTY_STATUS_LABEL: Record<string, string> = {
+  OPEN: '进行中',
+  AWARDED: '已发放',
+  EXPIRED: '已过期',
+};
 
 export function QuestionDetailPage() {
   const { id } = useParams();
@@ -27,11 +38,16 @@ export function QuestionDetailPage() {
 
   const questionQuery = useQuestion(questionId);
   const relatedQuery = useRelatedQuestions(questionId);
+  const bountyQuery = useQuestionBounty(questionId);
   const q = questionQuery.data;
+  const bounty = bountyQuery.data;
   const mutations = useQuestionMutations(questionId);
   const [draft, setDraft] = useState('');
   const [editQ, setEditQ] = useState(false);
   const [editA, setEditA] = useState<{ answerId: number; body: string } | null>(null);
+  const [bountyOpen, setBountyOpen] = useState(false);
+  const [bountyPoints, setBountyPoints] = useState(50);
+  const [bountyDays, setBountyDays] = useState(7);
 
   if (questionQuery.isLoading) {
     return (
@@ -57,11 +73,7 @@ export function QuestionDetailPage() {
     mutations.answerVote.mutateAsync({ answerId, value: current === next ? 0 : next });
 
   const openBounty = () => {
-    Modal.confirm({
-      title: '发起悬赏',
-      content: <BountyInput onOk={(points) => mutations.bounty.mutateAsync({ points, days: 7 })} />,
-      okText: '发起',
-    });
+    setBountyOpen(true);
   };
 
   return (
@@ -112,7 +124,16 @@ export function QuestionDetailPage() {
               onAdd={(body, parentId) => mutations.comment.mutateAsync({ body, parentId })}
               canComment={!!me}
             />
-            {q.permissions.canManage && (
+            {bounty && (
+              <div style={{ marginTop: 8 }}>
+                <Tag color="gold">
+                  悬赏 {bounty.points} 积分 · {bounty.sponsorName} ·{' '}
+                  {BOUNTY_STATUS_LABEL[bounty.status] ?? bounty.status} · 到期{' '}
+                  {formatDate(bounty.expiresAt)}
+                </Tag>
+              </div>
+            )}
+            {q.permissions.canManage && (!bounty || bounty.status !== 'OPEN') && (
               <Button type="link" style={{ paddingLeft: 0 }} onClick={openBounty}>
                 发起悬赏
               </Button>
@@ -266,6 +287,30 @@ export function QuestionDetailPage() {
         )}
       </Card>
 
+      <Modal
+        title="发起悬赏"
+        open={bountyOpen}
+        onCancel={() => setBountyOpen(false)}
+        okText="发起"
+        onOk={async () => {
+          if (bountyPoints < 10 || bountyPoints > 500 || bountyDays < 1 || bountyDays > 14) {
+            message.warning('积分需在 10–500 之间，天数需在 1–14 之间');
+            return;
+          }
+          await mutations.bounty.mutateAsync({ points: bountyPoints, days: bountyDays });
+          message.success('悬赏已发起');
+          setBountyOpen(false);
+        }}
+      >
+        <BountyInput
+          value={{ points: bountyPoints, days: bountyDays }}
+          onValueChange={(v) => {
+            setBountyPoints(v.points);
+            setBountyDays(v.days);
+          }}
+        />
+      </Modal>
+
       <EditQuestionModal
         open={editQ}
         initial={q ? { title: q.title, body: q.body, tags: q.tags } : { title: '', body: '', tags: [] }}
@@ -399,23 +444,37 @@ function CommentList({
   );
 }
 
-function BountyInput({ onOk }: { onOk: (points: number) => void }) {
-  const [points, setPoints] = useState('50');
+function BountyInput({
+  value,
+  onValueChange,
+}: {
+  value: { points: number; days: number };
+  onValueChange: (v: { points: number; days: number }) => void;
+}) {
   return (
-    <Space>
-      <span>悬赏积分（10–500）</span>
-      <Input
-        type="number"
-        min={10}
-        max={500}
-        value={points}
-        style={{ width: 120 }}
-        onChange={(e) => setPoints(e.target.value)}
-        onBlur={() => {
-          const v = Number(points);
-          if (v >= 10 && v <= 500) onOk(v);
-        }}
-      />
+    <Space direction="vertical">
+      <Space>
+        <span>悬赏积分（10–500）</span>
+        <Input
+          type="number"
+          min={10}
+          max={500}
+          value={value.points}
+          style={{ width: 120 }}
+          onChange={(e) => onValueChange({ ...value, points: Number(e.target.value) })}
+        />
+      </Space>
+      <Space>
+        <span>有效天数（1–14）</span>
+        <Input
+          type="number"
+          min={1}
+          max={14}
+          value={value.days}
+          style={{ width: 120 }}
+          onChange={(e) => onValueChange({ ...value, days: Number(e.target.value) })}
+        />
+      </Space>
     </Space>
   );
 }

@@ -1,5 +1,6 @@
 import { request } from './client';
 import type {
+  BountyView,
   Course,
   LeaderboardEntry,
   Me,
@@ -113,6 +114,12 @@ export const api = {
       url: `/v1/questions/${questionId}/bounty`,
       data: { points, days },
     }),
+
+  bountyLatest: async (questionId: number) =>
+    (await request<BountyView | null>({
+      method: 'GET',
+      url: `/v1/questions/${questionId}/bounty`,
+    })) ?? null,
 
   notifications: () => request<Page<Notification>>({ method: 'GET', url: '/v1/notifications' }),
 
