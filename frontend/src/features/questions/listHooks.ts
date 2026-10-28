@@ -10,6 +10,7 @@ export interface QuestionFilters {
   tag?: string;
   sort: string;
   unanswered: boolean;
+  bounty: boolean;
 }
 
 export function questionsQueryKey(filters: QuestionFilters) {
@@ -22,12 +23,17 @@ export function useQuestions(filters: QuestionFilters) {
     queryKey: questionsQueryKey(filters),
     queryFn: () => {
       const searching =
-        filters.keyword.trim() !== '' || !!filters.tag || filters.unanswered || filters.sort !== 'newest';
+        filters.keyword.trim() !== '' ||
+        !!filters.tag ||
+        filters.unanswered ||
+        filters.bounty ||
+        filters.sort !== 'newest';
       if (searching) {
         return api.search(filters.keyword.trim(), {
           tag: filters.tag,
           sort: filters.sort,
           unanswered: filters.unanswered,
+          bounty: filters.bounty,
           page: filters.page,
         });
       }

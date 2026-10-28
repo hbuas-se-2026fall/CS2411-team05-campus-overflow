@@ -78,11 +78,15 @@ export const api = {
       data: { targetType, targetId, body, ...(parentId ? { parentId } : {}) },
     }),
 
-  search: (q: string, params: { tag?: string; sort?: string; unanswered?: boolean; page?: number } = {}) => {
+  search: (
+    q: string,
+    params: { tag?: string; sort?: string; unanswered?: boolean; bounty?: boolean; page?: number } = {},
+  ) => {
     const search = new URLSearchParams({ q, page: String(params.page ?? 1) });
     if (params.tag) search.set('tag', params.tag);
     if (params.sort) search.set('sort', params.sort);
     if (params.unanswered) search.set('unanswered', 'true');
+    if (params.bounty) search.set('bounty', 'true');
     return request<Page<SearchResult>>({ method: 'GET', url: `/v1/search/questions?${search}` });
   },
 
