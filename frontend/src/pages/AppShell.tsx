@@ -6,6 +6,7 @@ import {
   LogoutOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  SettingOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -43,7 +44,15 @@ export function AppShell() {
     },
   ];
 
-  const selectedKey = ['/questions/new', '/courses', '/leaderboard', '/notifications'].includes(
+  const menuItems: MenuProps['items'] =
+    me?.role === 'ADMIN'
+      ? [
+          ...MENU_ITEMS,
+          { key: '/admin', icon: <SettingOutlined />, label: <Link to="/admin">管理</Link> },
+        ]
+      : MENU_ITEMS;
+
+  const selectedKey = ['/questions/new', '/courses', '/leaderboard', '/notifications', '/admin'].includes(
     location.pathname,
   )
     ? location.pathname
@@ -108,7 +117,7 @@ export function AppShell() {
           <Menu
             mode="inline"
             selectedKeys={[selectedKey]}
-            items={MENU_ITEMS}
+            items={menuItems}
             style={{ borderInlineEnd: 'none' }}
           />
         </Sider>

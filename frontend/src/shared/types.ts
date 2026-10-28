@@ -143,3 +143,20 @@ export interface Course {
   teacherName: string;
   myRole?: string;
 }
+
+export interface AdminUser {
+  id: number;
+  maskedUsername: string;
+  displayName: string;
+  role: Role;
+  verified: boolean;
+  college?: string;
+  className?: string;
+  createdAt: string;
+}
+
+export interface ReconciliationMismatch {
+  userId: number;
+  accountReputation: number;
+  ledgerSum: number;
+}

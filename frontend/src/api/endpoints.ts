@@ -1,5 +1,6 @@
 import { request } from './client';
 import type {
+  AdminUser,
   BountyView,
   Course,
   LeaderboardEntry,
@@ -9,6 +10,7 @@ import type {
   PopularTag,
   QuestionDetail,
   QuestionSummary,
+  ReconciliationMismatch,
   ReputationProfile,
   SearchResult,
 } from '@/shared/types';
@@ -79,11 +81,15 @@ export const api = {
       data: { targetType, targetId, body, ...(parentId ? { parentId } : {}) },
     }),
 
-  search: (q: string, params: { tag?: string; sort?: string; unanswered?: boolean; page?: number } = {}) => {
+  search: (
+    q: string,
+    params: { tag?: string; sort?: string; unanswered?: boolean; bounty?: boolean; page?: number } = {},
+  ) => {
     const search = new URLSearchParams({ q, page: String(params.page ?? 1) });
     if (params.tag) search.set('tag', params.tag);
     if (params.sort) search.set('sort', params.sort);
     if (params.unanswered) search.set('unanswered', 'true');
+    if (params.bounty) search.set('bounty', 'true');
     return request<Page<SearchResult>>({ method: 'GET', url: `/v1/search/questions?${search}` });
   },
 
@@ -127,4 +133,20 @@ export const api = {
 
   readAll: () =>
     request<{ updated: number }>({ method: 'POST', url: '/v1/notifications/read-all', data: {} }),
+
+  adminListUsers: (verified: boolean, page = 1, size = 20) =>
+    request<Page<AdminUser>>({
+      method: 'GET',
+      url: '/v1/admin/users',
+      params: { verified, page, size },
+    }),
+
+  adminVerifyUser: (userId: number) =>
+    request<void>({ method: 'POST', url: `/v1/admin/users/${userId}/verify` }),
+
+  adminChangeRole: (userId: number, role: string) =>
+    request<void>({ method: 'PUT', url: `/v1/admin/users/${userId}/role`, data: { role } }),
+
+  adminReconcile: () =>
+    request<ReconciliationMismatch[]>({ method: 'GET', url: '/v1/admin/reputation/reconciliation' }),
 };
