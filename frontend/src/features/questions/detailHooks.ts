@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/endpoints';
-import type { QuestionDetail } from '@/shared/types';
+import type { BountyView, QuestionDetail } from '@/shared/types';
 
 export const QUESTION_KEY = ['question'] as const;
 
@@ -18,6 +18,14 @@ export function useRelatedQuestions(questionId: number) {
   return useQuery({
     queryKey: [...QUESTION_KEY, questionId, 'related'] as const,
     queryFn: () => api.related(questionId),
+    enabled: Number.isFinite(questionId) && questionId > 0,
+  });
+}
+
+export function useQuestionBounty(questionId: number) {
+  return useQuery<BountyView | null>({
+    queryKey: [...QUESTION_KEY, questionId, 'bounty'] as const,
+    queryFn: () => api.bountyLatest(questionId),
     enabled: Number.isFinite(questionId) && questionId > 0,
   });
 }
@@ -68,7 +76,10 @@ export function useQuestionMutations(questionId: number) {
   });
   const bounty = useMutation({
     mutationFn: ({ points, days }: { points: number; days: number }) => api.bounty(questionId, points, days),
-    onSuccess: invalidateDetail,
+    onSuccess: () => {
+      invalidateDetail();
+      queryClient.invalidateQueries({ queryKey: [...QUESTION_KEY, questionId, 'bounty'] as const });
+    },
   });
   const answerVote = useMutation({
     mutationFn: ({ answerId, value }: { answerId: number; value: number }) =>
