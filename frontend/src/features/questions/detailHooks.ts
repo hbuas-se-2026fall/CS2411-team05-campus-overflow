@@ -85,6 +85,31 @@ export function useQuestionMutations(questionId: number) {
       queryClient.invalidateQueries({ queryKey: QUESTIONS_KEY });
     },
   });
+  const editQuestion = useMutation({
+    mutationFn: (input: AskInput) => api.updateQuestion(questionId, input),
+    onSuccess: invalidateDetail,
+  });
+  const editAnswer = useMutation({
+    mutationFn: ({ answerId, body }: { answerId: number; body: string }) => api.updateAnswer(answerId, body),
+    onSuccess: invalidateDetail,
+  });
+  const deleteAnswer = useMutation({
+    mutationFn: (answerId: number) => api.deleteAnswer(answerId),
+    onSuccess: invalidateDetail,
+  });
 
-  return { vote, answer, comment, accept, endorse, bounty, answerVote, answerComment, remove };
+  return {
+    vote,
+    answer,
+    comment,
+    accept,
+    endorse,
+    bounty,
+    answerVote,
+    answerComment,
+    remove,
+    editQuestion,
+    editAnswer,
+    deleteAnswer,
+  };
 }

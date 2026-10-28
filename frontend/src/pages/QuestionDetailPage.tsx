@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -29,6 +29,8 @@ export function QuestionDetailPage() {
   const q = questionQuery.data;
   const mutations = useQuestionMutations(questionId);
   const [draft, setDraft] = useState('');
+  const [editQ, setEditQ] = useState(false);
+  const [editA, setEditA] = useState<{ answerId: number; body: string } | null>(null);
 
   if (questionQuery.isLoading) {
     return (
@@ -114,6 +116,11 @@ export function QuestionDetailPage() {
                 发起悬赏
               </Button>
             )}
+            {q.permissions.canEdit && (
+              <Button type="link" style={{ paddingLeft: 0 }} onClick={() => setEditQ(true)}>
+                编辑问题
+              </Button>
+            )}
             {q.permissions.canDelete && (
               <Popconfirm
                 title="确定删除这个问题吗？"
@@ -182,6 +189,24 @@ export function QuestionDetailPage() {
                     教师认证
                   </Button>
                 )}
+                {a.canEdit && (
+                  <>
+                    <Button size="small" onClick={() => setEditA({ answerId: a.id, body: a.body })}>
+                      编辑回答
+                    </Button>
+                    <Popconfirm
+                      title="确定删除这条回答吗？"
+                      onConfirm={async () => {
+                        await mutations.deleteAnswer.mutateAsync(a.id);
+                        message.success('回答已删除');
+                      }}
+                    >
+                      <Button size="small" danger>
+                        删除回答
+                      </Button>
+                    </Popconfirm>
+                  </>
+                )}
               </Space>
               <CommentList
                 comments={a.comments}
@@ -237,6 +262,31 @@ export function QuestionDetailPage() {
           </Space>
         )}
       </Card>
+
+      <EditQuestionModal
+        open={editQ}
+        initial={q ? { title: q.title, body: q.body, tags: q.tags } : { title: '', body: '', tags: [] }}
+        submitting={mutations.editQuestion.isPending}
+        onCancel={() => setEditQ(false)}
+        onOk={async (v) => {
+          await mutations.editQuestion.mutateAsync(v);
+          message.success('问题已更新');
+          setEditQ(false);
+        }}
+      />
+      {editA && (
+        <EditAnswerModal
+          open={!!editA}
+          initial={editA.body}
+          submitting={mutations.editAnswer.isPending}
+          onCancel={() => setEditA(null)}
+          onOk={async (body) => {
+            await mutations.editAnswer.mutateAsync({ answerId: editA.answerId, body });
+            message.success('回答已更新');
+            setEditA(null);
+          }}
+        />
+      )}
     </Space>
   );
 }
@@ -313,5 +363,114 @@ function BountyInput({ onOk }: { onOk: (points: number) => void }) {
         }}
       />
     </Space>
+  );
+}
+
+function EditQuestionModal({
+  open,
+  initial,
+  submitting,
+  onCancel,
+  onOk,
+}: {
+  open: boolean;
+  initial: { title: string; body: string; tags: string[] };
+  submitting: boolean;
+  onCancel: () => void;
+  onOk: (v: { title: string; body: string; tags: string[] }) => void;
+}) {
+  const [title, setTitle] = useState(initial.title);
+  const [body, setBody] = useState(initial.body);
+  const [tags, setTags] = useState(initial.tags.join(', '));
+
+  useEffect(() => {
+    if (open) {
+      setTitle(initial.title);
+      setBody(initial.body);
+      setTags(initial.tags.join(', '));
+    }
+  }, [open, initial]);
+
+  const submit = () => {
+    if (!title.trim() || !body.trim()) {
+      message.warning('标题和正文不能为空');
+      return;
+    }
+    onOk({
+      title: title.trim(),
+      body: body.trim(),
+      tags: tags
+        .split(/[,，]/)
+        .map((t) => t.trim())
+        .filter(Boolean),
+    });
+  };
+
+  return (
+    <Modal
+      open={open}
+      title="编辑问题"
+      okText="保存"
+      confirmLoading={submitting}
+      onCancel={onCancel}
+      onOk={submit}
+    >
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="标题" maxLength={150} />
+        <Input.TextArea
+          rows={6}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="正文，支持 Markdown"
+        />
+        <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="标签，用逗号分隔" />
+      </Space>
+    </Modal>
+  );
+}
+
+function EditAnswerModal({
+  open,
+  initial,
+  submitting,
+  onCancel,
+  onOk,
+}: {
+  open: boolean;
+  initial: string;
+  submitting: boolean;
+  onCancel: () => void;
+  onOk: (body: string) => void;
+}) {
+  const [body, setBody] = useState(initial);
+
+  useEffect(() => {
+    if (open) setBody(initial);
+  }, [open, initial]);
+
+  const submit = () => {
+    if (!body.trim()) {
+      message.warning('回答内容不能为空');
+      return;
+    }
+    onOk(body.trim());
+  };
+
+  return (
+    <Modal
+      open={open}
+      title="编辑回答"
+      okText="保存"
+      confirmLoading={submitting}
+      onCancel={onCancel}
+      onOk={submit}
+    >
+      <Input.TextArea
+        rows={6}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="回答内容，支持 Markdown"
+      />
+    </Modal>
   );
 }
