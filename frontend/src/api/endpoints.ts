@@ -1,5 +1,6 @@
 import { request } from './client';
 import type {
+  Course,
   LeaderboardEntry,
   Me,
   Notification,
@@ -83,6 +84,13 @@ export const api = {
     }),
 
   popularTags: () => request<PopularTag[]>({ method: 'GET', url: '/v1/tags/popular?limit=15' }),
+
+  courses: () => request<Course[]>({ method: 'GET', url: '/v1/courses' }),
+
+  myCourses: () => request<Course[]>({ method: 'GET', url: '/v1/courses/mine' }),
+
+  joinCourse: (courseId: number) =>
+    request<void>({ method: 'POST', url: `/v1/courses/${courseId}/join`, data: {} }),
 
   leaderboard: (period: string) =>
     request<LeaderboardEntry[]>({ method: 'GET', url: '/v1/leaderboard', params: { period } }),

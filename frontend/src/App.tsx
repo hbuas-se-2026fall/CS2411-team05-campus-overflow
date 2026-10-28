@@ -7,6 +7,7 @@ import { QuestionListPage } from '@/pages/QuestionListPage';
 import { NewQuestionPage } from '@/pages/NewQuestionPage';
 import { QuestionDetailPage } from '@/pages/QuestionDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { CoursesPage } from '@/pages/CoursesPage';
 import { LeaderboardPage } from '@/pages/LeaderboardPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { UserProfilePage } from '@/pages/UserProfilePage';
@@ -38,6 +39,7 @@ export function App() {
           }
         />
         <Route path="/questions/:id" element={<QuestionDetailPage />} />
+        <Route path="/courses" element={<CoursesPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/users/:id" element={<UserProfilePage />} />
         <Route

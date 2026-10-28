@@ -120,3 +120,13 @@ export interface PopularTag {
   name: string;
   questionCount: number;
 }
+
+export interface Course {
+  id: number;
+  code: string;
+  name: string;
+  term: string;
+  teacherId: number;
+  teacherName: string;
+  myRole?: string;
+}
