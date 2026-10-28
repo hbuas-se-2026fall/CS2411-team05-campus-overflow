@@ -55,8 +55,19 @@ public class BountyService {
 
     @Transactional
     public long open(Actor actor, long questionId, int points, int days) {
-        // TODO(S3)：实现 BountyService.open——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.open 尚未实现");
+        QuestionRef question = qa.findQuestion(questionId)
+                .orElseThrow(() -> new NotFoundException("QA-404", "问题不存在"));
+        boolean questionOpen = !question.deleted() && question.acceptedAnswerId() == null;
+        boolean manages = identity.canManageCourse(actor.userId(), question.courseId());
+        Bounty bounty = Bounty.open(questionId, questionOpen, actor, manages, points, days, clock.instant());
+        ReputationAccount sponsor = accounts.findByUserId(actor.userId())
+                .orElseThrow(() -> new NotFoundException("RE-404", "声誉账户不存在"));
+        sponsor.freezePoints(points);
+        accounts.save(sponsor);
+        bounties.save(bounty);
+        events.publish(new BountyOpenedEvent(EventIds.next(), clock.instant(), bounty.id(), questionId,
+                actor.userId(), points, bounty.expiresAt()));
+        return bounty.id();
     }
 
     /** 由 AnswerAccepted 事件触发（在处理器事务内）。幂等：悬赏已结束则直接返回。 */
@@ -111,7 +122,11 @@ public class BountyService {
 
     @Transactional(readOnly = true)
     public Optional<BountyView> latest(long questionId) {
-        // TODO(S3)：实现 BountyService.latest——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.latest 尚未实现");
+        return bounties.findLatestByQuestion(questionId).map(b -> {
+            UserSummary sponsor = identity.findUser(b.sponsorId()).orElse(null);
+            return new BountyView(b.id(), b.questionId(), b.sponsorId(),
+                    sponsor != null ? sponsor.displayName() : "用户" + b.sponsorId(),
+                    b.points(), b.status().name(), b.createdAt(), b.expiresAt(), b.winnerId(), b.answerId());
+        });
     }
 }
