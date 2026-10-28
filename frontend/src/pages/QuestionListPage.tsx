@@ -83,7 +83,12 @@ export function QuestionListPage() {
       )}
 
       {questionsQuery.isError && (
-        <Alert type="error" showIcon message={questionsQuery.error?.message ?? '加载失败'} />
+        <Alert
+          type="error"
+          showIcon
+          message={questionsQuery.error?.message ?? '加载失败'}
+          action={<Button size="small" onClick={() => questionsQuery.refetch()}>重试</Button>}
+        />
       )}
 
       <List

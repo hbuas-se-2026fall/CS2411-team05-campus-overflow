@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, Card, Form, Input, Select, Space, Typography, message } from 'antd';
+import { Button, Card, Form, Input, Select, Space, Tabs, Typography, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/useAuth';
 import { useAsk } from '@/features/questions/detailHooks';
+import { MarkdownPreview } from '@/shared/components/MarkdownPreview';
 import type { AskInput } from '@/features/questions/detailHooks';
 
 interface AskFormValues {
@@ -72,12 +73,7 @@ export function NewQuestionPage() {
             { max: 30000, message: '正文最多 30000 个字' },
           ]}
         >
-          <Input.TextArea
-            rows={12}
-            showCount
-            maxLength={30000}
-            placeholder={'支持 Markdown：\n- 说明问题背景\n- 贴出你的代码（``` 包裹）\n- 描述期望与实际行为'}
-          />
+          <BodyField />
         </Form.Item>
 
         <Form.Item
@@ -106,5 +102,39 @@ export function NewQuestionPage() {
         </Space>
       </Form>
     </Card>
+  );
+}
+
+function BodyField() {
+  const form = Form.useFormInstance();
+  const value = Form.useWatch('body', form) ?? '';
+  return (
+    <Tabs
+      items={[
+        {
+          key: 'edit',
+          label: '编辑',
+          children: (
+            <Input.TextArea
+              rows={12}
+              showCount
+              maxLength={30000}
+              value={value}
+              onChange={(e) => form.setFieldValue('body', e.target.value)}
+              placeholder={'支持 Markdown：\n- 说明问题背景\n- 贴出你的代码（``` 包裹）\n- 描述期望与实际行为'}
+            />
+          ),
+        },
+        {
+          key: 'preview',
+          label: '预览',
+          children: (
+            <div style={{ minHeight: 220, border: '1px solid #f0f0f0', borderRadius: 6, padding: 12 }}>
+              <MarkdownPreview source={value} />
+            </div>
+          ),
+        },
+      ]}
+    />
   );
 }

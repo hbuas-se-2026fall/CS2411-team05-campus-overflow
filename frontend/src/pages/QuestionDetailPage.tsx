@@ -7,6 +7,7 @@ import {
   Input,
   Modal,
   Popconfirm,
+  Skeleton,
   Space,
   Spin,
   Tag,
@@ -35,8 +36,8 @@ export function QuestionDetailPage() {
 
   if (questionQuery.isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-        <Spin size="large" />
+      <div style={{ padding: 24 }}>
+        <Skeleton active paragraph={{ rows: 6 }} />
       </div>
     );
   }
@@ -47,6 +48,7 @@ export function QuestionDetailPage() {
         showIcon
         message="加载失败"
         description={questionQuery.error?.message ?? '问题不存在或已删除'}
+        action={<Button onClick={() => questionQuery.refetch()}>重试</Button>}
       />
     );
   }
