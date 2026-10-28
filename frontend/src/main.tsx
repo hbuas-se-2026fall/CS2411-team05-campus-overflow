@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { queryClient } from '@/shared/queryClient';
 import { api } from '@/api/endpoints';
 import { App } from './App';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import './styles.css';
 
 // 启动即拉一次 CSRF，让 XSRF-TOKEN Cookie 就位（后续非 GET 请求由拦截器兜底）
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ConfigProvider locale={zhCN}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
         </BrowserRouter>
       </QueryClientProvider>
     </ConfigProvider>
