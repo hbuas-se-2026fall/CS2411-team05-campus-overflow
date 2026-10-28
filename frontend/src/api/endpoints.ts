@@ -149,4 +149,7 @@ export const api = {
 
   adminReconcile: () =>
     request<ReconciliationMismatch[]>({ method: 'GET', url: '/v1/admin/reputation/reconciliation' }),
+
+  markNotificationRead: (id: number) =>
+    request<void>({ method: 'POST', url: `/v1/notifications/${id}/read` }),
 };

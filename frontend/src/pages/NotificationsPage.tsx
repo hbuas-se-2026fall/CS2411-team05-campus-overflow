@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { Badge, Button, Card, List, Typography } from 'antd';
 import { Link } from 'react-router-dom';
-import { useNotifications, useReadAll } from '@/features/notifications/hooks';
+import { useNotifications, useReadAll, useReadNotification } from '@/features/notifications/hooks';
 import { formatDate } from '@/shared/format';
 
 export function NotificationsPage() {
   const notificationsQuery = useNotifications();
   const readAllMutation = useReadAll();
+  const readNotification = useReadNotification();
 
   return (
     <Card
@@ -26,7 +27,22 @@ export function NotificationsPage() {
         dataSource={notificationsQuery.data?.items ?? []}
         locale={{ emptyText: <Typography.Text type="secondary">暂时没有通知。</Typography.Text> }}
         renderItem={(n) => (
-          <List.Item>
+          <List.Item
+            actions={
+              n.read
+                ? []
+                : [
+                    <Button
+                      key="mark-read"
+                      size="small"
+                      loading={readNotification.isPending}
+                      onClick={() => readNotification.mutateAsync(n.id)}
+                    >
+                      标记已读
+                    </Button>,
+                  ]
+            }
+          >
             <List.Item.Meta
               title={
                 <SpaceWithBadge read={n.read}>
