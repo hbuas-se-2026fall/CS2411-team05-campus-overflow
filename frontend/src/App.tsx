@@ -9,6 +9,7 @@ import { QuestionDetailPage } from '@/pages/QuestionDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { LeaderboardPage } from '@/pages/LeaderboardPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
+import { UserProfilePage } from '@/pages/UserProfilePage';
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const { me, loading } = useAuth();
@@ -38,6 +39,7 @@ export function App() {
         />
         <Route path="/questions/:id" element={<QuestionDetailPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/users/:id" element={<UserProfilePage />} />
         <Route
           path="/notifications"
           element={
