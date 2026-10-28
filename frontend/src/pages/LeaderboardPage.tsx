@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Card, Radio, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { api } from '@/api/endpoints';
 import type { LeaderboardEntry } from '@/shared/types';
 
@@ -14,7 +15,11 @@ const PERIODS = [
 
 const columns: ColumnsType<LeaderboardEntry> = [
   { title: '名次', dataIndex: 'rank', width: 80 },
-  { title: '用户', dataIndex: 'displayName' },
+  {
+    title: '用户',
+    dataIndex: 'displayName',
+    render: (_, r) => <Link to={`/users/${r.userId}`}>{r.displayName}</Link>,
+  },
   { title: '声誉', dataIndex: 'score', width: 120 },
 ];
 
