@@ -21,11 +21,12 @@ export function QuestionListPage() {
   const [activeTag, setActiveTag] = useState<string | undefined>();
   const [sort, setSort] = useState('newest');
   const [unanswered, setUnanswered] = useState(false);
+  const [bounty, setBounty] = useState(false);
   const [page, setPage] = useState(1);
 
   const filters = useMemo(
-    () => ({ page, keyword: searchInput, tag: activeTag, sort, unanswered }),
-    [page, searchInput, activeTag, sort, unanswered],
+    () => ({ page, keyword: searchInput, tag: activeTag, sort, unanswered, bounty }),
+    [page, searchInput, activeTag, sort, unanswered, bounty],
   );
   const questionsQuery = useQuestions(filters);
   const tagsQuery = usePopularTags();
@@ -64,6 +65,15 @@ export function QuestionListPage() {
           }}
         >
           仅看未回答
+        </Checkbox>
+        <Checkbox
+          checked={bounty}
+          onChange={(e) => {
+            setBounty(e.target.checked);
+            setPage(1);
+          }}
+        >
+          仅看悬赏
         </Checkbox>
         {me && (
           <Link to="/questions/new">
@@ -109,6 +119,7 @@ export function QuestionListPage() {
             <List.Item.Meta
               title={
                 <Link to={`/questions/${q.id}`} style={{ color: 'inherit' }}>
+                  {'bountyOpen' in q && q.bountyOpen && <Tag color="gold">悬赏</Tag>}
                   <Typography.Text strong style={{ fontSize: 16 }}>
                     {q.title}
                   </Typography.Text>
