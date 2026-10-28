@@ -54,7 +54,8 @@ export function useQuestionMutations(questionId: number) {
     onSuccess: invalidateDetail,
   });
   const comment = useMutation({
-    mutationFn: (body: string) => api.comment('QUESTION', questionId, body),
+    mutationFn: ({ body, parentId }: { body: string; parentId?: number }) =>
+      api.comment('QUESTION', questionId, body, parentId),
     onSuccess: invalidateDetail,
   });
   const accept = useMutation({
@@ -75,8 +76,8 @@ export function useQuestionMutations(questionId: number) {
     onSuccess: invalidateDetail,
   });
   const answerComment = useMutation({
-    mutationFn: ({ answerId, body }: { answerId: number; body: string }) =>
-      api.comment('ANSWER', answerId, body),
+    mutationFn: ({ answerId, body, parentId }: { answerId: number; body: string; parentId?: number }) =>
+      api.comment('ANSWER', answerId, body, parentId),
     onSuccess: invalidateDetail,
   });
   const remove = useMutation({

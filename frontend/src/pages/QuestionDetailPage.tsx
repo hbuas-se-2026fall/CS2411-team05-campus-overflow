@@ -17,6 +17,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/features/auth/useAuth';
 import { useQuestion, useQuestionMutations, useRelatedQuestions } from '@/features/questions/detailHooks';
 import { formatDate } from '@/shared/format';
+import type { Comment } from '@/shared/types';
 
 export function QuestionDetailPage() {
   const { id } = useParams();
@@ -108,7 +109,7 @@ export function QuestionDetailPage() {
             </div>
             <CommentList
               comments={q.comments}
-              onAdd={(body) => mutations.comment.mutateAsync(body)}
+              onAdd={(body, parentId) => mutations.comment.mutateAsync({ body, parentId })}
               canComment={!!me}
             />
             {q.permissions.canManage && (
@@ -210,7 +211,9 @@ export function QuestionDetailPage() {
               </Space>
               <CommentList
                 comments={a.comments}
-                onAdd={(body) => mutations.answerComment.mutateAsync({ answerId: a.id, body })}
+                onAdd={(body, parentId) =>
+                  mutations.answerComment.mutateAsync({ answerId: a.id, body, parentId })
+                }
                 canComment={!!me}
               />
             </div>
@@ -296,51 +299,102 @@ function CommentList({
   onAdd,
   canComment,
 }: {
-  comments: { id: number; author: { displayName: string }; body: string; createdAt: string }[];
-  onAdd: (body: string) => Promise<unknown>;
+  comments: Comment[];
+  onAdd: (body: string, parentId?: number) => Promise<unknown>;
   canComment: boolean;
 }) {
-  const [text, setText] = useState('');
-  const [open, setOpen] = useState(false);
+  const [replyingParent, setReplyingParent] = useState<number | 'top' | null>(null);
+  const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const roots = comments.filter((c) => !c.parentId);
+
   const submit = async () => {
-    if (!text.trim()) return;
+    if (!replyText.trim()) return;
     setSubmitting(true);
     try {
-      await onAdd(text.trim());
-      setText('');
-      setOpen(false);
+      await onAdd(replyText.trim(), replyingParent === 'top' ? undefined : (replyingParent ?? undefined));
+      setReplyText('');
+      setReplyingParent(null);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const renderBody = (body: string) =>
+    body.split(/(@[^\s@]+)/g).map((part, i) =>
+      part.startsWith('@') ? (
+        <span key={i} style={{ color: '#1677ff' }}>
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
+
+  const replyInput = (target: number | 'top') =>
+    replyingParent === target && canComment ? (
+      <Space.Compact style={{ marginTop: 4, display: 'flex' }}>
+        <Input
+          value={replyText}
+          onChange={(e) => setReplyText(e.target.value)}
+          placeholder="回复，可用 @昵称 提醒"
+          onPressEnter={submit}
+        />
+        <Button loading={submitting} onClick={submit}>
+          发表
+        </Button>
+      </Space.Compact>
+    ) : null;
+
+  if (roots.length === 0) {
+    return (
+      <div style={{ marginTop: 12 }}>
+        {canComment ? (
+          <>
+            <Button
+              type="link"
+              style={{ paddingLeft: 0 }}
+              onClick={() => setReplyingParent(replyingParent === 'top' ? null : 'top')}
+            >
+              {replyingParent === 'top' ? '取消' : '添加评论'}
+            </Button>
+            {replyInput('top')}
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginTop: 12 }}>
-      {comments.map((c) => (
-        <Typography.Paragraph key={c.id} type="secondary" style={{ marginBottom: 4 }}>
-          {c.body} — {c.author.displayName}
-        </Typography.Paragraph>
-      ))}
-      {canComment &&
-        (open ? (
-          <Space.Compact style={{ marginTop: 4 }}>
-            <Input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="评论，可用 @昵称 提醒他人"
-              onPressEnter={submit}
-            />
-            <Button loading={submitting} onClick={submit}>
-              发表
+      {roots.map((root) => (
+        <div key={root.id}>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 2 }}>
+            {renderBody(root.body)} — {root.author.displayName}
+          </Typography.Paragraph>
+          {canComment && (
+            <Button
+              type="link"
+              size="small"
+              style={{ padding: 0 }}
+              onClick={() => setReplyingParent(replyingParent === root.id ? null : root.id)}
+            >
+              {replyingParent === root.id ? '取消回复' : '回复'}
             </Button>
-          </Space.Compact>
-        ) : (
-          <Button type="link" style={{ paddingLeft: 0 }} onClick={() => setOpen(true)}>
-            添加评论
-          </Button>
-        ))}
+          )}
+          {replyInput(root.id)}
+          {comments
+            .filter((r) => r.parentId === root.id)
+            .map((r) => (
+              <div key={r.id} style={{ paddingLeft: 20, borderLeft: '2px solid #f0f0f0', marginTop: 4 }}>
+                <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                  {renderBody(r.body)} — {r.author.displayName}
+                </Typography.Paragraph>
+              </div>
+            ))}
+        </div>
+      ))}
     </div>
   );
 }
