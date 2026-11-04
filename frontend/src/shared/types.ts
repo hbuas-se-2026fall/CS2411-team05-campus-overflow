@@ -90,6 +90,19 @@ export interface SearchResult extends QuestionSummary {
   bountyOpen: boolean;
 }
 
+export interface BountyView {
+  id: number;
+  questionId: number;
+  sponsorId: number;
+  sponsorName: string;
+  points: number;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  winnerId: number | null;
+  answerId: number | null;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   userId: number;
@@ -119,4 +132,31 @@ export interface ReputationProfile {
 export interface PopularTag {
   name: string;
   questionCount: number;
+}
+
+export interface Course {
+  id: number;
+  code: string;
+  name: string;
+  term: string;
+  teacherId: number;
+  teacherName: string;
+  myRole?: string;
+}
+
+export interface AdminUser {
+  id: number;
+  maskedUsername: string;
+  displayName: string;
+  role: Role;
+  verified: boolean;
+  college?: string;
+  className?: string;
+  createdAt: string;
+}
+
+export interface ReconciliationMismatch {
+  userId: number;
+  accountReputation: number;
+  ledgerSum: number;
 }

@@ -7,8 +7,11 @@ import { QuestionListPage } from '@/pages/QuestionListPage';
 import { NewQuestionPage } from '@/pages/NewQuestionPage';
 import { QuestionDetailPage } from '@/pages/QuestionDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { CoursesPage } from '@/pages/CoursesPage';
 import { LeaderboardPage } from '@/pages/LeaderboardPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
+import { UserProfilePage } from '@/pages/UserProfilePage';
+import { AdminPage } from '@/pages/AdminPage';
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const { me, loading } = useAuth();
@@ -20,6 +23,18 @@ function RequireAuth({ children }: { children: ReactElement }) {
     );
   }
   return me ? children : <Navigate to="/login" replace />;
+}
+
+function RequireAdmin({ children }: { children: ReactElement }) {
+  const { me, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+        <Spin size="large" tip="加载中…" />
+      </div>
+    );
+  }
+  return me?.role === 'ADMIN' ? children : <Navigate to="/questions" replace />;
 }
 
 export function App() {
@@ -37,13 +52,23 @@ export function App() {
           }
         />
         <Route path="/questions/:id" element={<QuestionDetailPage />} />
+        <Route path="/courses" element={<CoursesPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/users/:id" element={<UserProfilePage />} />
         <Route
           path="/notifications"
           element={
             <RequireAuth>
               <NotificationsPage />
             </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminPage />
+            </RequireAdmin>
           }
         />
         <Route path="*" element={<Navigate to="/questions" replace />} />

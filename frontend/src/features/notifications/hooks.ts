@@ -28,3 +28,14 @@ export function useReadAll() {
     },
   });
 }
+
+export function useReadNotification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.markNotificationRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
+      queryClient.invalidateQueries({ queryKey: [...NOTIFICATIONS_KEY, 'unread'] as const });
+    },
+  });
+}

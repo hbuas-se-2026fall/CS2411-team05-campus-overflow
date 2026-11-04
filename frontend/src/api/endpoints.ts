@@ -1,5 +1,8 @@
 import { request } from './client';
 import type {
+  AdminUser,
+  BountyView,
+  Course,
   LeaderboardEntry,
   Me,
   Notification,
@@ -7,6 +10,7 @@ import type {
   PopularTag,
   QuestionDetail,
   QuestionSummary,
+  ReconciliationMismatch,
   ReputationProfile,
   SearchResult,
 } from '@/shared/types';
@@ -45,6 +49,15 @@ export const api = {
 
   deleteQuestion: (id: number) => request<void>({ method: 'DELETE', url: `/v1/questions/${id}` }),
 
+  updateQuestion: (id: number, body: { courseId?: number; title: string; body: string; tags: string[] }) =>
+    request<void>({ method: 'PUT', url: `/v1/questions/${id}`, data: body }),
+
+  updateAnswer: (answerId: number, body: string) =>
+    request<void>({ method: 'PUT', url: `/v1/answers/${answerId}`, data: { body } }),
+
+  deleteAnswer: (answerId: number) =>
+    request<void>({ method: 'DELETE', url: `/v1/answers/${answerId}` }),
+
   answer: (questionId: number, body: string) =>
     request<{ id: number }>({ method: 'POST', url: `/v1/questions/${questionId}/answers`, data: { body } }),
 
@@ -68,11 +81,15 @@ export const api = {
       data: { targetType, targetId, body, ...(parentId ? { parentId } : {}) },
     }),
 
-  search: (q: string, params: { tag?: string; sort?: string; unanswered?: boolean; page?: number } = {}) => {
+  search: (
+    q: string,
+    params: { tag?: string; sort?: string; unanswered?: boolean; bounty?: boolean; page?: number } = {},
+  ) => {
     const search = new URLSearchParams({ q, page: String(params.page ?? 1) });
     if (params.tag) search.set('tag', params.tag);
     if (params.sort) search.set('sort', params.sort);
     if (params.unanswered) search.set('unanswered', 'true');
+    if (params.bounty) search.set('bounty', 'true');
     return request<Page<SearchResult>>({ method: 'GET', url: `/v1/search/questions?${search}` });
   },
 
@@ -83,6 +100,13 @@ export const api = {
     }),
 
   popularTags: () => request<PopularTag[]>({ method: 'GET', url: '/v1/tags/popular?limit=15' }),
+
+  courses: () => request<Course[]>({ method: 'GET', url: '/v1/courses' }),
+
+  myCourses: () => request<Course[]>({ method: 'GET', url: '/v1/courses/mine' }),
+
+  joinCourse: (courseId: number) =>
+    request<void>({ method: 'POST', url: `/v1/courses/${courseId}/join`, data: {} }),
 
   leaderboard: (period: string) =>
     request<LeaderboardEntry[]>({ method: 'GET', url: '/v1/leaderboard', params: { period } }),
@@ -97,10 +121,35 @@ export const api = {
       data: { points, days },
     }),
 
+  bountyLatest: async (questionId: number) =>
+    (await request<BountyView | null>({
+      method: 'GET',
+      url: `/v1/questions/${questionId}/bounty`,
+    })) ?? null,
+
   notifications: () => request<Page<Notification>>({ method: 'GET', url: '/v1/notifications' }),
 
   unreadCount: () => request<{ count: number }>({ method: 'GET', url: '/v1/notifications/unread-count' }),
 
   readAll: () =>
     request<{ updated: number }>({ method: 'POST', url: '/v1/notifications/read-all', data: {} }),
+
+  adminListUsers: (verified: boolean, page = 1, size = 20) =>
+    request<Page<AdminUser>>({
+      method: 'GET',
+      url: '/v1/admin/users',
+      params: { verified, page, size },
+    }),
+
+  adminVerifyUser: (userId: number) =>
+    request<void>({ method: 'POST', url: `/v1/admin/users/${userId}/verify` }),
+
+  adminChangeRole: (userId: number, role: string) =>
+    request<void>({ method: 'PUT', url: `/v1/admin/users/${userId}/role`, data: { role } }),
+
+  adminReconcile: () =>
+    request<ReconciliationMismatch[]>({ method: 'GET', url: '/v1/admin/reputation/reconciliation' }),
+
+  markNotificationRead: (id: number) =>
+    request<void>({ method: 'POST', url: `/v1/notifications/${id}/read` }),
 };

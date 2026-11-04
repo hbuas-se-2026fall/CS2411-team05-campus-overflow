@@ -2,9 +2,11 @@ import { Badge, Button, Dropdown, Layout, Menu, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   BellOutlined,
+  BookOutlined,
   LogoutOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  SettingOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -18,6 +20,7 @@ const { Header, Sider, Content } = Layout;
 const MENU_ITEMS: MenuProps['items'] = [
   { key: '/questions', icon: <QuestionCircleOutlined />, label: <Link to="/questions">问题列表</Link> },
   { key: '/questions/new', icon: <PlusOutlined />, label: <Link to="/questions/new">我要提问</Link> },
+  { key: '/courses', icon: <BookOutlined />, label: <Link to="/courses">课程</Link> },
   { key: '/leaderboard', icon: <TrophyOutlined />, label: <Link to="/leaderboard">排行榜</Link> },
   { key: '/notifications', icon: <BellOutlined />, label: <Link to="/notifications">通知</Link> },
 ];
@@ -41,7 +44,17 @@ export function AppShell() {
     },
   ];
 
-  const selectedKey = ['/questions/new', '/leaderboard', '/notifications'].includes(location.pathname)
+  const menuItems: MenuProps['items'] =
+    me?.role === 'ADMIN'
+      ? [
+          ...(MENU_ITEMS ?? []),
+          { key: '/admin', icon: <SettingOutlined />, label: <Link to="/admin">管理</Link> },
+        ]
+      : MENU_ITEMS;
+
+  const selectedKey = ['/questions/new', '/courses', '/leaderboard', '/notifications', '/admin'].includes(
+    location.pathname,
+  )
     ? location.pathname
     : '/questions';
 
@@ -104,7 +117,7 @@ export function AppShell() {
           <Menu
             mode="inline"
             selectedKeys={[selectedKey]}
-            items={MENU_ITEMS}
+            items={menuItems}
             style={{ borderInlineEnd: 'none' }}
           />
         </Sider>

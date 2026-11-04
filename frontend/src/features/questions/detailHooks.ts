@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/endpoints';
-import type { QuestionDetail } from '@/shared/types';
+import type { BountyView, QuestionDetail } from '@/shared/types';
 
 export const QUESTION_KEY = ['question'] as const;
 
@@ -18,6 +18,14 @@ export function useRelatedQuestions(questionId: number) {
   return useQuery({
     queryKey: [...QUESTION_KEY, questionId, 'related'] as const,
     queryFn: () => api.related(questionId),
+    enabled: Number.isFinite(questionId) && questionId > 0,
+  });
+}
+
+export function useQuestionBounty(questionId: number) {
+  return useQuery<BountyView | null>({
+    queryKey: [...QUESTION_KEY, questionId, 'bounty'] as const,
+    queryFn: () => api.bountyLatest(questionId),
     enabled: Number.isFinite(questionId) && questionId > 0,
   });
 }
@@ -54,7 +62,8 @@ export function useQuestionMutations(questionId: number) {
     onSuccess: invalidateDetail,
   });
   const comment = useMutation({
-    mutationFn: (body: string) => api.comment('QUESTION', questionId, body),
+    mutationFn: ({ body, parentId }: { body: string; parentId?: number }) =>
+      api.comment('QUESTION', questionId, body, parentId),
     onSuccess: invalidateDetail,
   });
   const accept = useMutation({
@@ -67,7 +76,10 @@ export function useQuestionMutations(questionId: number) {
   });
   const bounty = useMutation({
     mutationFn: ({ points, days }: { points: number; days: number }) => api.bounty(questionId, points, days),
-    onSuccess: invalidateDetail,
+    onSuccess: () => {
+      invalidateDetail();
+      queryClient.invalidateQueries({ queryKey: [...QUESTION_KEY, questionId, 'bounty'] as const });
+    },
   });
   const answerVote = useMutation({
     mutationFn: ({ answerId, value }: { answerId: number; value: number }) =>
@@ -75,8 +87,8 @@ export function useQuestionMutations(questionId: number) {
     onSuccess: invalidateDetail,
   });
   const answerComment = useMutation({
-    mutationFn: ({ answerId, body }: { answerId: number; body: string }) =>
-      api.comment('ANSWER', answerId, body),
+    mutationFn: ({ answerId, body, parentId }: { answerId: number; body: string; parentId?: number }) =>
+      api.comment('ANSWER', answerId, body, parentId),
     onSuccess: invalidateDetail,
   });
   const remove = useMutation({
@@ -85,6 +97,31 @@ export function useQuestionMutations(questionId: number) {
       queryClient.invalidateQueries({ queryKey: QUESTIONS_KEY });
     },
   });
+  const editQuestion = useMutation({
+    mutationFn: (input: AskInput) => api.updateQuestion(questionId, input),
+    onSuccess: invalidateDetail,
+  });
+  const editAnswer = useMutation({
+    mutationFn: ({ answerId, body }: { answerId: number; body: string }) => api.updateAnswer(answerId, body),
+    onSuccess: invalidateDetail,
+  });
+  const deleteAnswer = useMutation({
+    mutationFn: (answerId: number) => api.deleteAnswer(answerId),
+    onSuccess: invalidateDetail,
+  });
 
-  return { vote, answer, comment, accept, endorse, bounty, answerVote, answerComment, remove };
+  return {
+    vote,
+    answer,
+    comment,
+    accept,
+    endorse,
+    bounty,
+    answerVote,
+    answerComment,
+    remove,
+    editQuestion,
+    editAnswer,
+    deleteAnswer,
+  };
 }
