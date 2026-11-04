@@ -47,7 +47,7 @@ export function AppShell() {
   const menuItems: MenuProps['items'] =
     me?.role === 'ADMIN'
       ? [
-          ...MENU_ITEMS,
+          ...(MENU_ITEMS ?? []),
           { key: '/admin', icon: <SettingOutlined />, label: <Link to="/admin">管理</Link> },
         ]
       : MENU_ITEMS;

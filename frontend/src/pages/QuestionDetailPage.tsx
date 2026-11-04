@@ -9,7 +9,6 @@ import {
   Popconfirm,
   Skeleton,
   Space,
-  Spin,
   Tag,
   Typography,
   message,
@@ -130,8 +129,7 @@ export function QuestionDetailPage() {
               <div style={{ marginTop: 8 }}>
                 <Tag color="gold">
                   悬赏 {bounty.points} 积分 · {bounty.sponsorName} ·{' '}
-                  {BOUNTY_STATUS_LABEL[bounty.status] ?? bounty.status} · 到期{' '}
-                  {formatDate(bounty.expiresAt)}
+                  {BOUNTY_STATUS_LABEL[bounty.status] ?? bounty.status} · 到期 {formatDate(bounty.expiresAt)}
                 </Tag>
               </div>
             )}
