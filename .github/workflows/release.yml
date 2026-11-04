@@ -1,0 +1,40 @@
+# CampusOverflow 发布流水线：打 v* 标签时自动推镜像到 ghcr.io 并创建 Release
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 登录 ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 构建并推送后端镜像
+        run: |
+          docker build -f deploy/backend.Dockerfile -t ghcr.io/${{ github.repository }}/backend:${GITHUB_REF_NAME} .
+          docker push ghcr.io/${{ github.repository }}/backend:${GITHUB_REF_NAME}
+
+      - name: 构建并推送前端镜像
+        run: |
+          docker build -f deploy/frontend.Dockerfile -t ghcr.io/${{ github.repository }}/web:${GITHUB_REF_NAME} .
+          docker push ghcr.io/${{ github.repository }}/web:${GITHUB_REF_NAME}
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false
