@@ -97,7 +97,11 @@ export function QuestionListPage() {
           type="error"
           showIcon
           message={questionsQuery.error?.message ?? '加载失败'}
-          action={<Button size="small" onClick={() => questionsQuery.refetch()}>重试</Button>}
+          action={
+            <Button size="small" onClick={() => questionsQuery.refetch()}>
+              重试
+            </Button>
+          }
         />
       )}
 
@@ -119,7 +123,7 @@ export function QuestionListPage() {
             <List.Item.Meta
               title={
                 <Link to={`/questions/${q.id}`} style={{ color: 'inherit' }}>
-                  {'bountyOpen' in q && q.bountyOpen && <Tag color="gold">悬赏</Tag>}
+                  {'bountyOpen' in q && q.bountyOpen ? <Tag color="gold">悬赏</Tag> : null}
                   <Typography.Text strong style={{ fontSize: 16 }}>
                     {q.title}
                   </Typography.Text>
